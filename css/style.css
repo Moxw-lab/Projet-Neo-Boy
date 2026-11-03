@@ -238,7 +238,16 @@ button {
 .pause .menu { font-size: 3.8cqw; }
 .objectif { font-size: 3.4cqw; margin-bottom: 5cqw !important; }
 
-.pause, .fin { background: rgba(224, 248, 208, 0.94); }
+.pause, .fin, .atelier { background: var(--gb-0); }
+.atelier h2 { margin-bottom: 3cqw; }
+.atelier .menu { font-size: 3.6cqw; margin-bottom: 3cqw; }
+#apercu {
+  width: 22cqw;
+  height: 22cqw;
+  margin-bottom: 3cqw;
+  border: 1cqw solid var(--gb-3);
+  image-rendering: pixelated;
+}
 
 .dialogue {
   position: absolute;

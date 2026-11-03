@@ -13,7 +13,8 @@ const ui = {
   titre: $('titre'), menuTitre: $('menu-titre'),
   dialogue: $('dialogue'), dialogueNom: $('dialogue-nom'), dialogueTexte: $('dialogue-texte'),
   toast: $('toast'), pause: $('pause'), pauseObjectif: $('pause-objectif'), menuPause: $('menu-pause'),
-  fin: $('fin'), mission: $('mission'),
+  fin: $('fin'), finTitre: $('fin-titre'), finTexte: $('fin-texte'), finBonus: $('fin-bonus'), mission: $('mission'),
+  atelier: $('atelier'), menuAtelier: $('menu-atelier'), apercu: $('apercu'),
 };
 
 const DIRECTIONS = {
@@ -29,6 +30,15 @@ const CELLULES = [
 ];
 const DRONES_VILLE = [[8, 12], [26, 17], [34, 16], [16, 18], [30, 2]];
 const DRONES_USINE = [[5, 23], [34, 23], [12, 27], [28, 27], [20, 22]];
+// Chapitre 2 : les plantes mutantes (la "mère" est plus grosse et plus solide)
+const PLANTES = [
+  { id: 'p1', tx: 6, ty: 10 },
+  { id: 'p2', tx: 10, ty: 18 },
+  { id: 'p3', tx: 24, ty: 9 },
+  { id: 'p4', tx: 28, ty: 18 },
+  { id: 'p5', tx: 37, ty: 15 },
+  { id: 'mere', tx: 30, ty: 11, grande: true },
+];
 const PORTES = {
   '4,4': 'Le labo du Dr Ohm. Pas le temps de faire la sieste !',
   '12,13': "L'atelier de Mira. Ça sent l'huile de moteur.",
@@ -40,7 +50,16 @@ const CLE_SAUVEGARDE = 'volt-sauvegarde';
 let etat = nouvelEtat();
 
 function nouvelEtat() {
-  return { mission: 0, cellules: [], bossVu: false };
+  return {
+    mission: 0,
+    cellules: [],
+    bossVu: false,
+    // Chapitre 2
+    perso: { chapeau: 'antenne', tenue: 'verte', ecran: 'classique' },
+    pipSuit: false,
+    coeurBonus: false,
+    plantesDetruites: [],
+  };
 }
 
 function sauver() {
@@ -70,15 +89,45 @@ let choixTitre = [], selectionTitre = 0;
 
 function creerJoueur() {
   // hb = "hitbox" : [décalage x, décalage y, largeur, hauteur]
-  return { x: 5 * TILE, y: 7 * TILE, hb: [3, 8, 10, 8], dir: 'bas', hp: 3, hpMax: 3, invincible: 0, recharge: 0, marche: 0 };
+  const hpMax = etat.coeurBonus ? 4 : 3; // Léo offre un cœur en plus au chapitre 2
+  // trace = les dernières positions de Volt (pour que Pip le suive)
+  return { x: 5 * TILE, y: 7 * TILE, hb: [3, 8, 10, 8], dir: 'bas', hp: hpMax, hpMax, invincible: 0, recharge: 0, marche: 0, trace: [] };
 }
 
 function creerPnjs() {
-  return [
-    { id: 'ohm', nom: 'DR OHM', sprite: 'ohm', x: 4 * TILE, y: 5 * TILE, hb: [2, 4, 12, 12] },
-    { id: 'mira', nom: 'MIRA', sprite: 'mira', x: 12 * TILE, y: 14 * TILE, hb: [2, 4, 12, 12] },
-    { id: 'leo', nom: 'LÉO', sprite: 'leo', x: 25 * TILE, y: 5 * TILE, hb: [2, 4, 12, 12] },
+  const m = etat.mission;
+  const liste = [
+    { id: 'ohm', sprite: 'ohm', x: 4 * TILE, y: 5 * TILE, hb: [2, 4, 12, 12] },
+    { id: 'mira', sprite: 'mira', x: 12 * TILE, y: 14 * TILE, hb: [2, 4, 12, 12] },
+    { id: 'leo', sprite: 'leo', x: 25 * TILE, y: 5 * TILE, hb: [2, 4, 12, 12] },
   ];
+  // Après le chapitre 1, Rouille est réparé et devient jardinier dans l'usine
+  if (m >= 6) liste.push({ id: 'rouille', sprite: 'boss', x: 19 * TILE, y: 25 * TILE, hb: [2, 4, 12, 12] });
+  if (m >= 7) liste.push({ id: 'nova', sprite: 'nova', x: 37 * TILE, y: 11 * TILE, hb: [2, 4, 12, 12] });
+  if (m >= 9) {
+    const pip = { id: 'pip', sprite: 'pip', x: 36 * TILE, y: 27 * TILE, hb: [3, 6, 10, 10] };
+    if (m >= 10) { // de retour chez Léo
+      pip.x = 26 * TILE;
+      pip.y = 5 * TILE;
+    } else if (etat.pipSuit) {
+      pip.x = joueur.x;
+      pip.y = joueur.y;
+      pip.suit = true;
+    }
+    liste.push(pip);
+  }
+  return liste;
+}
+
+function creerPlante(p) {
+  return {
+    type: 'plante', id: p.id, x: p.tx * TILE, y: p.ty * TILE,
+    hb: p.grande ? [4, 4, 24, 26] : [2, 2, 12, 13],
+    hp: p.grande ? 12 : 3,
+    grande: !!p.grande,
+    timer: 60 + Math.random() * 60,
+    flash: 0,
+  };
 }
 
 function creerDrone(tx, ty, rapide = false) {
@@ -92,6 +141,11 @@ function creerEnnemis() {
   }
   if (etat.mission === 5) {
     for (const [tx, ty] of DRONES_USINE) liste.push(creerDrone(tx, ty, true));
+  }
+  if (etat.mission === 11) {
+    for (const p of PLANTES) {
+      if (!etat.plantesDetruites.includes(p.id)) liste.push(creerPlante(p));
+    }
   }
   return liste;
 }
@@ -134,7 +188,9 @@ function bloque(e, nx, ny) {
   if (zoneBloquee(nx + ox, ny + oy, w, h)) return true;
   if (e === joueur) {
     const zone = { x: nx + ox, y: ny + oy, w, h };
-    return pnjs.some((p) => chevauche(zone, boite(p)));
+    const actuelle = boite(e);
+    // On ignore Pip quand il nous suit, et un perso déjà collé à Volt (sinon il resterait coincé)
+    return pnjs.some((p) => !p.suit && chevauche(zone, boite(p)) && !chevauche(actuelle, boite(p)));
   }
   return false;
 }
@@ -171,6 +227,12 @@ function majJoueur() {
     // Aide aux coins : si on bute de justesse contre un angle, on glisse à côté
     if (j.x === avant.x && j.y === avant.y) aideCoin(j, dx, dy);
     j.marche++;
+    // Pip suit Volt en rejouant ses positions avec un peu de retard
+    const pip = pnjs.find((p) => p.suit);
+    if (pip && (j.x !== avant.x || j.y !== avant.y)) {
+      j.trace.push({ x: j.x, y: j.y });
+      if (j.trace.length > 20) Object.assign(pip, j.trace.shift());
+    }
   } else {
     j.marche = 0;
   }
@@ -243,6 +305,7 @@ function batterieVide() {
     tirs = [];
     tirsEnnemis = [];
     if (etat.mission === 5) boss = creerBoss();
+    for (const p of pnjs) if (p.suit) Object.assign(p, { x: joueur.x, y: joueur.y });
   });
 }
 
@@ -284,8 +347,20 @@ function parler(p) {
       ], () => changerMission(5));
     } else if (m === 5) {
       dire('DR OHM', ["Rouille se cache au fond de l'usine. Courage !"]);
+    } else if (m === 6) { // début du chapitre 2
+      dire('DR OHM', [
+        'Volt ! Grâce à toi, les drones dorment tranquilles.',
+        'Mais un nouveau mystère arrive : des plantes bizarres poussent en ville...',
+        'Avant tout, Mira veut te faire une mise à jour. File à son atelier !',
+      ], () => changerMission(7));
+    } else if (m === 7) {
+      dire('DR OHM', ["Mira t'attend devant son atelier."]);
+    } else if (m <= 9) {
+      dire('DR OHM', ['Léo a perdu son chat-robot ? Aide-le, il doit être bouleversé.']);
+    } else if (m <= 12) {
+      dire('DR OHM', ['Nova, la botaniste du parc, en sait plus que moi sur ces plantes.']);
     } else {
-      dire('DR OHM', ['Néo-Cité te doit une fière chandelle, Volt.']);
+      dire('DR OHM', ['Deux chapitres terminés... Tu es une légende, Volt !']);
     }
   }
 
@@ -299,14 +374,80 @@ function parler(p) {
       ], () => { Son.objet(); changerMission(3); });
     } else if (m === 3) dire('MIRA', ["Fonce à l'antenne, au nord-est !"]);
     else if (m < 6) dire('MIRA', ["Si tu croises Rouille, vise ses yeux. C'est là qu'il est fragile."]);
-    else dire('MIRA', ['Je vais réparer Rouille. Il fera un super jardinier !']);
+    else if (m === 6) dire('MIRA', ["J'ai réparé Rouille. Il est devenu jardinier dans l'usine !"]);
+    else if (m === 7) {
+      dire('MIRA', [
+        "Te voilà ! J'ai monté un atelier de personnalisation.",
+        'Choisis ton style, petit robot !',
+      ], () => ouvrirAtelier(() => dire('MIRA', [
+        'Trop classe ! Reviens quand tu veux changer de look.',
+        "Au fait, Léo te cherchait. Il avait l'air tout triste...",
+      ], () => changerMission(8))));
+    } else {
+      dire('MIRA', ['Envie de changer de look ?'], () => ouvrirAtelier());
+    }
   }
 
   if (p.id === 'leo') {
     if (m === 1) dire('LÉO', ["J'ai vu une lumière briller dans le parc, près de l'étang !"]);
     else if (m === 5) dire('LÉO', ["Les drones viennent de l'usine... j'ai peur."]);
-    else if (m === 6) dire('LÉO', ['Tu es mon héros, Volt !']);
+    else if (m === 6 || m === 7) dire('LÉO', ['Tu es mon héros, Volt !']);
+    else if (m === 8) {
+      dire('LÉO', [
+        'Volt ! Mon chat-robot Pip a disparu...',
+        'Il adore les endroits chauds. Peut-être dans la vieille usine ?',
+      ], () => changerMission(9));
+    } else if (m === 9 && !etat.pipSuit) dire('LÉO', ["Tu as retrouvé Pip ? Il est tout petit, avec des oreilles pointues."]);
+    else if (m === 9) {
+      dire('LÉO', [
+        'PIP ! Tu es revenu !',
+        'Merci Volt ! Tiens, cette pile de secours est pour toi.',
+        '>> Volt gagne un cœur en plus !',
+      ], () => {
+        etat.pipSuit = false;
+        etat.coeurBonus = true;
+        joueur.hpMax = 4;
+        joueur.hp = 4;
+        Son.objet();
+        changerMission(10);
+      });
+    } else if (m >= 10) dire('LÉO', ['Pip et moi, on est les meilleurs amis du monde !']);
     else dire('LÉO', ['Quand je serai grand, je serai un robot comme toi !']);
+  }
+
+  if (p.id === 'pip') {
+    if (m === 9 && !etat.pipSuit) {
+      dire('PIP', ['Miaou-bip ?', '>> Pip décide de te suivre !'], () => {
+        etat.pipSuit = true;
+        sauver();
+        majMission();
+        pnjs = creerPnjs();
+      });
+    } else dire('PIP', ['Miaou-bip ! Rrrronron...']);
+  }
+
+  if (p.id === 'rouille') {
+    if (m === 9 && !etat.pipSuit) dire('ROUILLE', ['Un petit chat ? Il dort près des tuyaux chauds, à l\'est de l\'usine.']);
+    else if (m >= 10 && m <= 12) dire('ROUILLE', ['Ces plantes mutantes abîment mes tomates. Grrr... je veux dire : bzzt.']);
+    else dire('ROUILLE', ['Bzzt ! Je cultive des tomates maintenant.', 'Merci encore de m\'avoir réparé, Volt.']);
+  }
+
+  if (p.id === 'nova') {
+    const reste = PLANTES.length - etat.plantesDetruites.length;
+    if (m < 10) dire('NOVA', ["Bonjour ! Je suis Nova, botaniste. J'étudie les plantes de Néo-Cité."]);
+    else if (m === 10) {
+      dire('NOVA', [
+        'Volt ! Des plantes mutantes attaquent la ville !',
+        'Elles crachent des graines. Leur chef, la Ronce-Mère, pousse juste à côté.',
+        'Détruis-les toutes, la Ronce-Mère aussi !',
+      ], () => changerMission(11));
+    } else if (m === 11) dire('NOVA', [`Encore ${reste} plante(s) mutante(s). Courage !`]);
+    else if (m === 12) {
+      dire('NOVA', [
+        'Tu as réussi ! Le pollen mutant disparaît.',
+        'Je vais replanter des graines saines. Néo-Cité sera encore plus verte !',
+      ], () => finChapitre(2));
+    } else dire('NOVA', ['Regarde ces fleurs, Volt. Magnifiques, non ?']);
   }
 }
 
@@ -372,9 +513,14 @@ function changerMission(n) {
     for (const [tx, ty] of DRONES_USINE) ennemis.push(creerDrone(tx, ty, true));
     boss = creerBoss();
   }
+  if (n === 11) ennemis = creerEnnemis();
+  pnjs = creerPnjs(); // de nouveaux personnages peuvent apparaître
   sauver();
   majMission();
-  const titres = { 1: 'MISSION 1 : Les cellules perdues', 2: "MISSION 2 : L'antenne", 5: "MISSION 3 : L'usine" };
+  const titres = {
+    1: 'MISSION 1 : Les cellules perdues', 2: "MISSION 2 : L'antenne", 5: "MISSION 3 : L'usine",
+    7: 'CHAPITRE 2 - MISSION 1 : Nouveau look', 8: 'MISSION 2 : Pip a disparu', 10: 'MISSION 3 : La forêt en colère',
+  };
   if (titres[n]) {
     Son.mission();
     afficherToast(titres[n]);
@@ -384,9 +530,13 @@ function changerMission(n) {
 function titreMission() {
   const m = etat.mission;
   if (m === 0) return 'PROLOGUE';
-  if (m === 1) return 'MISSION 1/3 · Les cellules perdues';
-  if (m <= 4) return "MISSION 2/3 · L'antenne";
-  if (m === 5) return "MISSION 3/3 · L'usine";
+  if (m === 1) return 'CH.1 · MISSION 1/3 · Les cellules perdues';
+  if (m <= 4) return "CH.1 · MISSION 2/3 · L'antenne";
+  if (m === 5) return "CH.1 · MISSION 3/3 · L'usine";
+  if (m === 6) return 'CHAPITRE 2 DÉBLOQUÉ !';
+  if (m === 7) return 'CH.2 · MISSION 1/3 · Nouveau look';
+  if (m <= 9) return 'CH.2 · MISSION 2/3 · Pip a disparu';
+  if (m <= 12) return 'CH.2 · MISSION 3/3 · La forêt en colère';
   return 'JEU TERMINÉ · Merci !';
 }
 
@@ -399,6 +549,13 @@ function objectif() {
   if (m === 3) return "Répare l'antenne au nord-est.";
   if (m === 4) return 'Retourne voir le Dr Ohm.';
   if (m === 5) return "Entre dans l'usine et arrête Rouille.";
+  if (m === 6) return 'Parle au Dr Ohm pour lancer le chapitre 2.';
+  if (m === 7) return 'Va voir Mira à son atelier.';
+  if (m === 8) return 'Léo te cherche. Va le voir.';
+  if (m === 9) return etat.pipSuit ? 'Ramène Pip à Léo.' : 'Trouve Pip, le chat-robot de Léo.';
+  if (m === 10) return 'Va voir Nova, la botaniste, au parc.';
+  if (m === 11) return `Détruis les plantes mutantes (${PLANTES.length - etat.plantesDetruites.length} restantes).`;
+  if (m === 12) return 'Retourne voir Nova au parc.';
   return 'Néo-Cité est sauvée ! Balade-toi librement.';
 }
 
@@ -439,9 +596,18 @@ function vaincreBoss() {
 function finDuJeu() {
   etat.mission = 6;
   boss = null;
+  pnjs = creerPnjs();
+  finChapitre(1);
+}
+
+function finChapitre(numero) {
+  if (numero === 2) etat.mission = 13;
   sauver();
   majMission();
   mode = 'fin';
+  ui.finTitre.textContent = numero === 1 ? 'BRAVO !' : 'CHAPITRE 2 TERMINÉ';
+  ui.finTexte.textContent = numero === 1 ? 'Néo-Cité est sauvée.' : "Néo-Cité n'a jamais été aussi verte.";
+  ui.finBonus.textContent = numero === 1 ? 'CHAPITRE 2 DÉBLOQUÉ ! Parle au Dr Ohm.' : "Merci d'avoir joué !";
   ui.fin.hidden = false;
   Son.arreterMusique();
   Son.victoire();
@@ -451,8 +617,30 @@ function finDuJeu() {
 //  Ennemis, tirs, objets, particules
 // =====================================================
 
+// Les plantes mutantes ne bougent pas, mais crachent des graines vers Volt
+function majPlante(p) {
+  if (p.flash) p.flash--;
+  const taille = p.grande ? 32 : 16;
+  const cx = p.x + taille / 2, cy = p.y + taille / 3;
+  const distance = Math.hypot(joueur.x + 8 - cx, joueur.y + 10 - cy);
+  if (--p.timer <= 0 && distance < (p.grande ? 110 : 80)) {
+    const angle = Math.atan2(joueur.y + 10 - cy, joueur.x + 8 - cx);
+    const angles = p.grande ? [angle - 0.4, angle, angle + 0.4] : [angle];
+    for (const a of angles) {
+      tirsEnnemis.push({ x: cx - 2, y: cy - 2, dx: Math.cos(a) * 1.1, dy: Math.sin(a) * 1.1, vie: 150 });
+    }
+    p.timer = p.grande ? 70 : 110;
+    Son.tirBoss();
+  }
+  if (chevauche(boite(p), boite(joueur))) blesserJoueur(p);
+}
+
 function majEnnemis() {
   for (const d of ennemis) {
+    if (d.type === 'plante') {
+      majPlante(d);
+      continue;
+    }
     if (--d.timer <= 0) {
       const ex = joueur.x - d.x, ey = joueur.y - d.y;
       if (Math.hypot(ex, ey) < 70 && Math.random() < 0.6) {
@@ -544,8 +732,20 @@ function majTirs() {
 }
 
 function droneDetruit(d) {
-  explosion(d.x + 8, d.y + 8);
+  explosion(d.x + 8, d.y + 8, d.grande ? 30 : 10);
   Son.explosion();
+  if (d.type === 'plante') {
+    etat.plantesDetruites.push(d.id);
+    const reste = PLANTES.length - etat.plantesDetruites.length;
+    if (reste > 0) {
+      afficherToast(`Plante détruite ! Encore ${reste}.`);
+      sauver();
+      majMission();
+    } else {
+      afficherToast('Plus aucune plante mutante ! Va voir Nova.');
+      changerMission(12);
+    }
+  }
   // Parfois, le drone lâche un cœur pour se soigner
   if (joueur.hp < joueur.hpMax && Math.random() < 0.4) {
     objets.push({ type: 'coeur', x: d.x + 4, y: d.y + 4, hb: [0, 0, 8, 8] });
@@ -614,10 +814,21 @@ function cibleMission() {
       .sort((a, b) => Math.hypot(a.tx - jx, a.ty - jy) - Math.hypot(b.tx - jx, b.ty - jy));
     if (restantes.length) return [restantes[0].tx, restantes[0].ty]; // la plus proche
   }
-  if (m === 0 || m === 1 || m === 4) return [4, 5]; // Dr Ohm
-  if (m === 2) return [12, 14];                     // Mira
-  if (m === 3) return [35, 3];                      // l'antenne
-  if (m === 5) return [19, 24];                     // le repaire de Rouille
+  if (m === 11) { // la plante mutante la plus proche
+    const [jx, jy] = caseJoueur();
+    const plantes = ennemis
+      .filter((e) => e.type === 'plante')
+      .map((e) => [Math.floor(e.x / TILE), Math.floor(e.y / TILE)])
+      .sort((a, b) => Math.hypot(a[0] - jx, a[1] - jy) - Math.hypot(b[0] - jx, b[1] - jy));
+    if (plantes.length) return plantes[0];
+  }
+  if (m === 0 || m === 1 || m === 4 || m === 6) return [4, 5]; // Dr Ohm
+  if (m === 2 || m === 7) return [12, 14];  // Mira
+  if (m === 3) return [35, 3];              // l'antenne
+  if (m === 5) return [19, 24];             // le repaire de Rouille
+  if (m === 8) return [25, 5];              // Léo
+  if (m === 9) return etat.pipSuit ? [25, 5] : [36, 27]; // Pip, puis retour chez Léo
+  if (m >= 10 && m <= 12) return [37, 11];  // Nova
   return null;
 }
 
@@ -717,9 +928,12 @@ function afficherTitre() {
   ui.fin.hidden = true;
   ui.pause.hidden = true;
   ui.dialogue.hidden = true;
+  ui.atelier.hidden = true;
   dialogue = null;
   Son.arreterMusique();
-  choixTitre = charger() ? ['CONTINUER', 'NOUVELLE PARTIE'] : ['NOUVELLE PARTIE'];
+  const sauvegarde = charger();
+  appliquerPerso(sauvegarde ? sauvegarde.perso : nouvelEtat().perso);
+  choixTitre = sauvegarde ? ['CONTINUER', 'NOUVELLE PARTIE'] : ['NOUVELLE PARTIE'];
   selectionTitre = 0;
   rendreMenuTitre();
 }
@@ -754,6 +968,7 @@ function demarrerPartie() {
   ui.pause.hidden = true;
   monde.barriereOuverte = etat.mission >= 5;
   monde.antenneReparee = etat.mission >= 4;
+  appliquerPerso(etat.perso);
   joueur = creerJoueur();
   pnjs = creerPnjs();
   ennemis = creerEnnemis();
@@ -813,6 +1028,69 @@ function majPause() {
     if (selectionMenu === 3) return afficherTitre();
   }
   rendreMenu(ui.menuPause, choixMenu(), selectionMenu);
+}
+
+// ---------- Atelier de Mira : personnalisation (chapitre 2) ----------
+const OPTIONS_PERSO = [
+  { cle: 'chapeau', label: 'TÊTE', choix: [['antenne', 'Antenne'], ['casquette', 'Casquette'], ['feuille', 'Pousse'], ['crete', 'Crête']] },
+  { cle: 'tenue', label: 'TENUE', choix: [['verte', 'Verte'], ['blanche', 'Blanche'], ['sombre', 'Sombre']] },
+  { cle: 'ecran', label: 'ÉCRAN', choix: [['classique', 'Classique'], ['gris', 'Gris'], ['neon', 'Néon'], ['sepia', 'Sépia']] },
+];
+let selectionAtelier = 0;
+let apresAtelier = null;
+
+// Applique le look choisi : sprites de Volt + couleurs de l'écran
+function appliquerPerso(perso) {
+  construireVolt(perso);
+  PALETTE.splice(0, 4, ...(PALETTES[perso.ecran] || PALETTES.classique));
+  PALETTE.forEach((c, i) => document.documentElement.style.setProperty(`--gb-${i}`, c));
+  prerendreSprites();
+  fondMiniCarte = null; // la mini-carte doit être redessinée avec les nouvelles couleurs
+}
+
+function ouvrirAtelier(apres) {
+  mode = 'atelier';
+  selectionAtelier = 0;
+  apresAtelier = apres;
+  ui.atelier.hidden = false;
+  rendreAtelier();
+}
+
+function rendreAtelier() {
+  const lignes = OPTIONS_PERSO.map((o) => {
+    const nom = o.choix.find(([cle]) => cle === etat.perso[o.cle])[1];
+    return `${o.label} : &lt; ${nom} &gt;`;
+  });
+  rendreMenu(ui.menuAtelier, [...lignes, 'TERMINER'], selectionAtelier);
+  // Aperçu de Volt en grand
+  const g = ui.apercu.getContext('2d');
+  g.fillStyle = PALETTE[1];
+  g.fillRect(0, 0, 16, 16);
+  g.drawImage(CACHE_SPRITES.volt_bas, 0, 0);
+}
+
+function majAtelier() {
+  const n = OPTIONS_PERSO.length + 1;
+  if (appui('haut')) { selectionAtelier = (selectionAtelier + n - 1) % n; Son.menu(); }
+  if (appui('bas')) { selectionAtelier = (selectionAtelier + 1) % n; Son.menu(); }
+  const option = OPTIONS_PERSO[selectionAtelier];
+  const sens = appui('droite') || (option && appui('a')) ? 1 : appui('gauche') ? -1 : 0;
+  if (option && sens) { // on passe au choix suivant / précédent
+    const i = option.choix.findIndex(([cle]) => cle === etat.perso[option.cle]);
+    const k = option.choix.length;
+    etat.perso[option.cle] = option.choix[(i + sens + k) % k][0];
+    appliquerPerso(etat.perso);
+    Son.menu();
+  }
+  if ((!option && appui('a')) || appui('start') || appui('b')) {
+    sauver();
+    ui.atelier.hidden = true;
+    mode = 'jeu';
+    Son.objet();
+    if (apresAtelier) apresAtelier();
+    return;
+  }
+  rendreAtelier();
 }
 
 let minuteurToast = null;
@@ -885,8 +1163,14 @@ function dessinerMonde() {
     }
   }
 
-  // Drones
+  // Drones et plantes mutantes
   for (const d of ennemis) {
+    if (d.type === 'plante') {
+      let nom = d.timer < 20 ? 'plante' : 'plante2'; // la bouche s'ouvre juste avant de tirer
+      if (d.flash) nom += '_flash';
+      dessinerSprite(ctx, nom, d.x - camX, d.y - camY, false, d.grande ? 2 : 1);
+      continue;
+    }
     let nom = Math.floor(frame / 4) % 2 ? 'drone' : 'drone2';
     if (d.flash) nom += '_flash';
     dessinerSprite(ctx, nom, d.x - camX, d.y - camY + Math.sin((frame + d.x) / 12) * 1.5);
@@ -937,7 +1221,7 @@ function dessinerHUD() {
     ctx.fillStyle = PALETTE[0];
     ctx.fillRect(85, 4, (70 * boss.hp) / boss.hpMax, 3);
   }
-  if (miniCarteVisible && etat.mission < 6) {
+  if (miniCarteVisible && cibleMission()) {
     majChemin();
     dessinerMiniCarte();
   }
@@ -979,6 +1263,8 @@ function maj() {
     majParticules();
   } else if (mode === 'pause') {
     majPause();
+  } else if (mode === 'atelier') {
+    majAtelier();
   } else if (mode === 'fin') {
     if (appui('start') || appui('a')) afficherTitre();
   }

@@ -42,11 +42,19 @@
           <ul id="menu-pause" class="menu"></ul>
         </div>
 
-        <!-- Fin -->
+        <!-- Atelier de personnalisation (chapitre 2) -->
+        <div id="atelier" class="calque atelier" hidden>
+          <h2>ATELIER</h2>
+          <canvas id="apercu" width="16" height="16"></canvas>
+          <ul id="menu-atelier" class="menu"></ul>
+          <p class="petit">&lt; &gt; : changer · K : valider</p>
+        </div>
+
+        <!-- Fin d'un chapitre -->
         <div id="fin" class="calque fin" hidden>
-          <h2>BRAVO !</h2>
-          <p>Néo-Cité est sauvée.</p>
-          <p class="petit">Merci d'avoir joué !</p>
+          <h2 id="fin-titre">BRAVO !</h2>
+          <p id="fin-texte">Néo-Cité est sauvée.</p>
+          <p id="fin-bonus" class="petit">Merci d'avoir joué !</p>
           <p class="clignote">ENTRÉE</p>
         </div>
       </div>

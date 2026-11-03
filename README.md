@@ -25,10 +25,20 @@ La progression est sauvegardée automatiquement dans le navigateur (`localStorag
 
 ## Les missions
 
+### Chapitre 1
+
 0. **Prologue** : parler au Dr Ohm.
 1. **Les cellules perdues** : retrouver 3 cellules d'énergie dans la ville.
 2. **L'antenne** : récupérer la super-clé de Mira et réparer l'antenne.
 3. **L'usine** : entrer dans l'usine et affronter Rouille, le robot qui contrôle les drones.
+
+### Chapitre 2 (débloqué après le chapitre 1)
+
+1. **Nouveau look** : l'atelier de Mira permet de personnaliser Volt (chapeau, tenue, couleurs de l'écran). On peut y revenir quand on veut.
+2. **Pip a disparu** : retrouver le chat-robot de Léo. Pip suit Volt jusqu'à Léo, qui offre un cœur en plus.
+3. **La forêt en colère** : aider Nova, la botaniste, à détruire les plantes mutantes et la Ronce-Mère.
+
+Nouveaux personnages : **Nova** la botaniste, **Pip** le chat-robot, et **Rouille**, devenu jardinier après sa réparation.
 
 ## Organisation du code
 
@@ -50,6 +60,8 @@ js/jeu.js         la boucle de jeu, Volt, les ennemis, le boss et les missions
 - La **carte** est un tableau de lignes de texte : chaque caractère est une case de 16 × 16 pixels (`T` = arbre, `#` = immeuble, `~` = eau…).
 - Les **collisions** utilisent des rectangles (« hitbox ») : on vérifie si deux rectangles se chevauchent.
 - La **mini-carte** (en haut à droite) affiche le chemin le plus court jusqu'à l'objectif. Il est calculé avec un **parcours en largeur (BFS)** : on explore la carte case par case depuis Volt jusqu'à atteindre la cible (`calculerChemin()` dans `jeu.js`).
+- La **personnalisation** reconstruit les sprites de Volt en superposant un chapeau sur sa tête et en changeant les couleurs de sa tenue (`construireVolt()` dans `sprites.js`).
+- **Pip** suit Volt en rejouant ses 20 dernières positions, ce qui donne un petit retard naturel.
 - Les **missions** sont un simple nombre (`etat.mission`) qui avance au fil des dialogues.
 
 ## Idées pour modifier le jeu

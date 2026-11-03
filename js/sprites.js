@@ -13,8 +13,8 @@ const PALETTE = ['#e0f8d0', '#88c070', '#346856', '#081820'];
 const SPRITES = {
   // --- Volt, le héros ---
   volt_bas: [
-    '.......33.......',
-    '.......33.......',
+    '................',
+    '................',
     '.....333333.....',
     '....30000003....',
     '...3000000003...',
@@ -31,8 +31,8 @@ const SPRITES = {
     '....33....33....',
   ],
   volt_haut: [
-    '.......33.......',
-    '.......33.......',
+    '................',
+    '................',
     '.....333333.....',
     '....30000003....',
     '...3000000003...',
@@ -49,8 +49,8 @@ const SPRITES = {
     '....33....33....',
   ],
   volt_cote: [ // regarde à droite (on le retourne pour la gauche)
-    '........33......',
-    '........33......',
+    '................',
+    '................',
     '.....333333.....',
     '....30000003....',
     '...3000000003...',
@@ -123,7 +123,63 @@ const SPRITES = {
     '................',
   ],
 
+  // --- Personnages du chapitre 2 ---
+  nova: [ // robote botaniste
+    '......22........',
+    '.....2112.......',
+    '.......3........',
+    '.....333333.....',
+    '....30000003....',
+    '...3033003303...',
+    '...3033003303...',
+    '...3000000003...',
+    '....30000003....',
+    '.....333333.....',
+    '....32222223....',
+    '...3221111223...',
+    '...3.211112.3...',
+    '....22222222....',
+    '...2222222222...',
+    '.....33..33.....',
+  ],
+  pip: [ // le chat-robot de Léo
+    '................',
+    '................',
+    '................',
+    '................',
+    '....3......3....',
+    '....33....33....',
+    '....30333303....',
+    '....30000003....',
+    '....30300303....',
+    '....30022003....',
+    '.....300003...3.',
+    '....31111113..3.',
+    '....31111113.3..',
+    '....311111133...',
+    '....33.33.33....',
+    '................',
+  ],
+
   // --- Ennemis ---
+  plante: [ // plante mutante, bouche ouverte
+    '.....333333.....',
+    '...3322222233...',
+    '..322222222223..',
+    '.32220000002223.',
+    '.32203030302223.',
+    '.32203333332223.',
+    '.32200303002223.',
+    '..322000000223..',
+    '...3322222233...',
+    '.....333333.....',
+    '.......33.......',
+    '..333..33..333..',
+    '.31113.33.31113.',
+    '..333.3333.333..',
+    '.....333333.....',
+    '....33333333....',
+  ],
   drone: [
     '................',
     '..333333333333..',
@@ -209,9 +265,77 @@ SPRITES.coeur_vide = SPRITES.coeur.map((l) => l.replace(/0/g, '2'));
 SPRITES.pile_vide = SPRITES.pile.map((l) => l.replace(/1/g, '3'));
 SPRITES.drone2 = [...SPRITES.drone];
 SPRITES.drone2[1] = '.....333333.....'; // hélice qui tourne
+SPRITES.plante2 = [...SPRITES.plante]; // bouche fermée
+SPRITES.plante2[4] = '.32222222222223.';
+SPRITES.plante2[5] = '.32233333332223.';
+SPRITES.plante2[6] = '.32222222222223.';
 // Version "flash" (toute blanche) quand un ennemi est touché
-for (const nom of ['drone', 'drone2', 'boss']) {
+for (const nom of ['drone', 'drone2', 'boss', 'plante', 'plante2']) {
   SPRITES[nom + '_flash'] = SPRITES[nom].map((l) => l.replace(/[0-3]/g, '0'));
+}
+
+// =====================================================
+//  PERSONNALISATION DE VOLT (chapitre 2)
+// =====================================================
+
+// Les palettes d'écran au choix
+const PALETTES = {
+  classique: ['#e0f8d0', '#88c070', '#346856', '#081820'],
+  gris:      ['#f0f0f0', '#a8a8a8', '#585858', '#101010'],
+  neon:      ['#fde8ff', '#f27ad6', '#6a2c9c', '#1a0b2e'],
+  sepia:     ['#f8e8c8', '#d0a068', '#8a5a30', '#2a1a10'],
+};
+
+// Ce qu'on peut mettre sur la tête de Volt (dessiné par-dessus sa tête)
+const CHAPEAUX = {
+  antenne: [
+    '.......33.......',
+    '.......33.......',
+  ],
+  casquette: [
+    '................',
+    '......3333......',
+    '....33222233....',
+    '...3222222223...',
+    '..33333333333...',
+  ],
+  feuille: [
+    '....22....22....',
+    '.....223322.....',
+  ],
+  crete: [
+    '.....3.33.3.....',
+    '......3333......',
+  ],
+};
+
+// Volt sans rien sur la tête (copie des dessins de départ)
+const VOLT_BASE = {
+  bas: [...SPRITES.volt_bas],
+  haut: [...SPRITES.volt_haut],
+  cote: [...SPRITES.volt_cote],
+};
+
+// Fabrique les sprites de Volt selon ses choix : chapeau + couleur de tenue
+function construireVolt(perso) {
+  for (const dir in VOLT_BASE) {
+    const lignes = VOLT_BASE[dir].map((ligne, y) => {
+      if (y < 9) return ligne; // la tête ne change pas de couleur
+      if (perso.tenue === 'blanche') return ligne.replace(/1/g, '0');
+      if (perso.tenue === 'sombre') return ligne.replace(/[12]/g, (c) => (c === '1' ? '2' : '1'));
+      return ligne;
+    });
+    const chapeau = CHAPEAUX[perso.chapeau] || [];
+    const decalage = dir === 'cote' ? 1 : 0; // de profil, la tête est 1 pixel plus à droite
+    chapeau.forEach((ligneChapeau, y) => {
+      const pixels = [...lignes[y]];
+      [...ligneChapeau].forEach((p, x) => {
+        if (p !== '.' && x + decalage < 16) pixels[x + decalage] = p;
+      });
+      lignes[y] = pixels.join('');
+    });
+    SPRITES['volt_' + dir] = lignes;
+  }
 }
 
 // On dessine chaque sprite une seule fois dans un petit canvas :
