@@ -1,0 +1,313 @@
+/* =====================================================
+   STYLE : la console et l'écran
+   ===================================================== */
+
+:root {
+  /* Les 4 couleurs de l'écran (mêmes que PALETTE dans sprites.js) */
+  --gb-0: #e0f8d0;
+  --gb-1: #88c070;
+  --gb-2: #346856;
+  --gb-3: #081820;
+
+  --coque: #d6d2c8;
+  --coque-ombre: #aaa69c;
+  --bord-ecran: #4b4b5c;
+  --bouton: #2c2c34;
+  --rouge: #a8204e;
+  --texte-coque: #2e2e7a;
+  --fond: #1f1c2c;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 24px 16px 48px;
+  background: radial-gradient(circle at 50% 0%, #3b3554, var(--fond) 70%);
+  color: #e8e6f0;
+  font-family: 'Press Start 2P', monospace;
+}
+
+/* ---------- La console ---------- */
+.console {
+  width: min(360px, 100%);
+  padding: 20px 20px 24px;
+  background: var(--coque);
+  border-radius: 14px 14px 60px 14px;
+  box-shadow: inset -6px -6px 0 var(--coque-ombre), 0 20px 50px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.bordure-ecran {
+  position: relative;
+  padding: 16px 24px 10px;
+  background: var(--bord-ecran);
+  border-radius: 10px 10px 36px 10px;
+}
+
+.voyant {
+  position: absolute;
+  left: 8px;
+  top: 42%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b5c;
+  box-shadow: 0 0 8px #ff3b5c;
+}
+
+.ecran {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 160 / 144;
+  overflow: hidden;
+  background: var(--gb-0);
+  container-type: inline-size; /* permet d'utiliser l'unité cqw = % de la largeur de l'écran */
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated; /* garde les pixels bien nets en agrandissant */
+}
+
+.marque-ecran {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 6px;
+  color: #b9b9cc;
+  letter-spacing: 1px;
+}
+
+.logo {
+  margin: 14px 0 0;
+  font-size: 15px;
+  font-style: italic;
+  color: var(--texte-coque);
+}
+
+.mission {
+  min-height: 3.4em;
+  margin: 10px 0 0;
+  font-size: 7px;
+  line-height: 1.7;
+  color: var(--texte-coque);
+}
+.mission strong { color: var(--rouge); }
+
+/* ---------- Boutons ---------- */
+button {
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.controles {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.croix {
+  position: relative;
+  width: 102px;
+  height: 102px;
+}
+.croix button, .croix .centre {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  background: var(--bouton);
+}
+.croix .haut   { left: 34px; top: 0; border-radius: 5px 5px 0 0; }
+.croix .bas    { left: 34px; bottom: 0; border-radius: 0 0 5px 5px; }
+.croix .gauche { left: 0; top: 34px; border-radius: 5px 0 0 5px; }
+.croix .droite { right: 0; top: 34px; border-radius: 0 5px 5px 0; }
+.croix .centre { left: 34px; top: 34px; }
+
+.ab {
+  display: flex;
+  gap: 14px;
+  transform: rotate(-25deg);
+}
+.bouton-rond {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: var(--texte-coque);
+}
+.bouton-rond button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--rouge);
+  box-shadow: 0 4px 0 #6b1131;
+}
+
+.options {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 22px;
+}
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 6px;
+  color: var(--texte-coque);
+}
+.option button {
+  width: 44px;
+  height: 12px;
+  border-radius: 6px;
+  background: #8b8896;
+  transform: rotate(-25deg);
+}
+
+/* Bouton enfoncé (clavier ou souris) */
+.enfonce { filter: brightness(1.7); translate: 0 2px; }
+
+.haut-parleur {
+  display: flex;
+  gap: 7px;
+  width: fit-content;
+  margin: 4px 6px 0 auto;
+  transform: rotate(-25deg);
+}
+.haut-parleur span {
+  width: 6px;
+  height: 40px;
+  border-radius: 3px;
+  background: var(--coque-ombre);
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Calques au-dessus de l'écran ---------- */
+[hidden] { display: none !important; }
+
+.calque {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6cqw;
+  text-align: center;
+  font-size: 4cqw;
+  line-height: 1.7;
+  color: var(--gb-3);
+}
+.calque p { margin: 0 0 3cqw; }
+.calque h2 { margin: 0 0 5cqw; font-size: 8cqw; }
+.petit { font-size: 3.2cqw; color: var(--gb-2); }
+
+.titre { background: rgba(224, 248, 208, 0.82); }
+.titre h1 {
+  margin: 0;
+  font-size: 17cqw;
+  letter-spacing: 1.5cqw;
+  text-shadow: 1.4cqw 1.4cqw 0 var(--gb-1);
+}
+.sous-titre { font-size: 4.2cqw; color: var(--gb-2); margin: 3cqw 0 7cqw !important; }
+.credit { font-size: 2.8cqw; color: var(--gb-2); margin-top: 7cqw !important; }
+
+.menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 4.4cqw;
+}
+.menu li { position: relative; padding: 1.2cqw 0 1.2cqw 7cqw; color: var(--gb-2); }
+.menu li.choisi { color: var(--gb-3); }
+.menu li.choisi::before { content: '>'; position: absolute; left: 0; animation: clignote 0.8s steps(1) infinite; }
+.pause .menu { font-size: 3.8cqw; }
+.objectif { font-size: 3.4cqw; margin-bottom: 5cqw !important; }
+
+.pause, .fin { background: rgba(224, 248, 208, 0.94); }
+
+.dialogue {
+  position: absolute;
+  left: 2.5cqw;
+  right: 2.5cqw;
+  bottom: 2.5cqw;
+  min-height: 31cqw;
+  padding: 4cqw 4cqw 3cqw;
+  background: var(--gb-0);
+  border: 1.2cqw solid var(--gb-3);
+  border-radius: 2cqw;
+  box-shadow: inset 0 0 0 0.8cqw var(--gb-1);
+  font-size: 3.7cqw;
+  line-height: 1.7;
+  color: var(--gb-3);
+}
+.dialogue p { margin: 0; }
+.dialogue .nom {
+  position: absolute;
+  top: -1.2cqw;
+  left: 3cqw;
+  transform: translateY(-60%);
+  padding: 1cqw 2cqw;
+  background: var(--gb-3);
+  color: var(--gb-0);
+  font-size: 3cqw;
+}
+.dialogue .nom:empty { display: none; }
+.dialogue .suite { position: absolute; right: 3cqw; bottom: 1.5cqw; visibility: hidden; }
+.dialogue.complet .suite { visibility: visible; animation: clignote 0.8s steps(1) infinite; }
+
+.toast {
+  position: absolute;
+  bottom: 5cqw; /* en bas, pour ne pas cacher la mini-carte */
+  left: 50%;
+  max-width: 92%;
+  padding: 2cqw 3cqw;
+  background: var(--gb-3);
+  color: var(--gb-0);
+  font-size: 3.2cqw;
+  line-height: 1.6;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 3cqw);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+.clignote { animation: clignote 1s steps(1) infinite; }
+@keyframes clignote { 50% { opacity: 0; } }
+
+/* ---------- Aide sous la console ---------- */
+.aide {
+  width: min(520px, 100%);
+  font-size: 9px;
+  line-height: 2.2;
+  color: #cfcbe0;
+}
+.aide h2 { font-size: 12px; color: #fff; }
+.aide table { border-collapse: collapse; width: 100%; }
+.aide td { padding: 4px 8px 4px 0; vertical-align: top; }
+kbd {
+  display: inline-block;
+  margin: 0 2px 2px 0;
+  padding: 2px 6px;
+  background: #3a3550;
+  border-bottom: 2px solid #15131f;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 8px;
+}

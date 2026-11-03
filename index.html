@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Volt — Les gardiens de Néo-Cité</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="console">
+    <div class="bordure-ecran">
+      <span class="voyant" title="Batterie"></span>
+      <div class="ecran">
+        <canvas id="ecran" width="160" height="144"></canvas>
+
+        <!-- Écran titre -->
+        <div id="titre" class="calque titre">
+          <h1>VOLT</h1>
+          <p class="sous-titre">Les gardiens<br>de Néo-Cité</p>
+          <ul id="menu-titre" class="menu"></ul>
+          <p class="credit">Projet Neo-Boy · Raoux Ugo</p>
+        </div>
+
+        <!-- Boîte de dialogue -->
+        <div id="dialogue" class="dialogue" hidden>
+          <span id="dialogue-nom" class="nom"></span>
+          <p id="dialogue-texte"></p>
+          <span class="suite">v</span>
+        </div>
+
+        <!-- Petit message temporaire -->
+        <div id="toast" class="toast"></div>
+
+        <!-- Menu (pause) -->
+        <div id="pause" class="calque pause" hidden>
+          <h2>MENU</h2>
+          <p class="petit">Objectif :</p>
+          <p id="pause-objectif" class="objectif"></p>
+          <ul id="menu-pause" class="menu"></ul>
+        </div>
+
+        <!-- Fin -->
+        <div id="fin" class="calque fin" hidden>
+          <h2>BRAVO !</h2>
+          <p>Néo-Cité est sauvée.</p>
+          <p class="petit">Merci d'avoir joué !</p>
+          <p class="clignote">ENTRÉE</p>
+        </div>
+      </div>
+      <p class="marque-ecran">ÉCRAN MATRICIEL · SON 8-BIT</p>
+    </div>
+
+    <p class="logo">NEO-BOY</p>
+    <p id="mission" class="mission"></p>
+
+    <div class="controles">
+      <div class="croix">
+        <button data-bouton="haut" class="haut" aria-label="Haut"></button>
+        <button data-bouton="gauche" class="gauche" aria-label="Gauche"></button>
+        <span class="centre"></span>
+        <button data-bouton="droite" class="droite" aria-label="Droite"></button>
+        <button data-bouton="bas" class="bas" aria-label="Bas"></button>
+      </div>
+      <div class="ab">
+        <div class="bouton-rond"><button data-bouton="b" aria-label="B : tirer"></button><span>B</span></div>
+        <div class="bouton-rond"><button data-bouton="a" aria-label="A : parler"></button><span>A</span></div>
+      </div>
+    </div>
+
+    <div class="options">
+      <div class="option"><button data-bouton="select" aria-label="Select : son"></button><span>SON</span></div>
+      <div class="option"><button data-bouton="start" aria-label="Start : pause"></button><span>START</span></div>
+    </div>
+
+    <div class="haut-parleur" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </main>
+
+  <section class="aide">
+    <h2>Comment jouer</h2>
+    <table>
+      <tr><td><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> ou <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Se déplacer</td></tr>
+      <tr><td><kbd>K</kbd> ou <kbd>Espace</kbd></td><td>Parler / valider (A)</td></tr>
+      <tr><td><kbd>J</kbd> ou <kbd>X</kbd></td><td>Tirer au laser (B)</td></tr>
+      <tr><td><kbd>Entrée</kbd></td><td>Menu (START) : mini-carte, son…</td></tr>
+      <tr><td><kbd>M</kbd></td><td>Couper / remettre le son</td></tr>
+    </table>
+    <p>La partie est sauvegardée automatiquement dans ton navigateur.</p>
+  </section>
+
+  <script src="js/sprites.js"></script>
+  <script src="js/carte.js"></script>
+  <script src="js/son.js"></script>
+  <script src="js/controles.js"></script>
+  <script src="js/jeu.js"></script>
+</body>
+</html>
